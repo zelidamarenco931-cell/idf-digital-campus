@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, FileText, ClipboardList, FileCheck2, ChevronRight } from "lucide-react";
+import { Video, FileText, ClipboardList, FileCheck2 } from "lucide-react";
 
 export const Route = createFileRoute("/student/courses/$id")({
   component: () => <RequireAuth allow={["student", "instructor", "admin"]}><Page /></RequireAuth>,
