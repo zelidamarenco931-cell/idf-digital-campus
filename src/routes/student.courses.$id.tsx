@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, FileText, ClipboardList, FileCheck2, ChevronRight } from "lucide-react";
+import { Video, FileText, ClipboardList, FileCheck2 } from "lucide-react";
 
 export const Route = createFileRoute("/student/courses/$id")({
   component: () => <RequireAuth allow={["student", "instructor", "admin"]}><Page /></RequireAuth>,
@@ -95,7 +95,9 @@ function Page() {
                       {closed ? `O teste fechou em ${fmt(q.closes_at)}` : `Disponível${q.closes_at ? ` até ${fmt(q.closes_at)}` : ""}`}
                     </p>
                   </div>
-                  {!closed && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  {!closed && (
+                    <Link to="/student/quiz/$id" params={{ id: q.id }} className="text-xs rounded bg-primary text-primary-foreground px-2 py-1">Abrir teste</Link>
+                  )}
                 </li>
               );
             })}
@@ -106,6 +108,7 @@ function Page() {
                   <p className="text-sm font-medium">{a.title}</p>
                   <p className="text-xs text-muted-foreground">Entregar até {fmt(a.due_at)}</p>
                 </div>
+                <Link to="/student/assignment/$id" params={{ id: a.id }} className="text-xs rounded bg-primary text-primary-foreground px-2 py-1">Submeter</Link>
               </li>
             ))}
             {(!t.lessons?.length && !t.materials?.length && !t.quizzes?.length && !t.assignments?.length) && (
