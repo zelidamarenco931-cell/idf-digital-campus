@@ -162,8 +162,8 @@ function MaterialsBlock({ topicId, materials, onChange }: any) {
     const path = `${topicId}/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage.from("course-materials").upload(path, file);
     if (upErr) return toast.error(upErr.message);
-    const { data: pub } = supabase.storage.from("course-materials").createSignedUrl(path, 60 * 60 * 24 * 365);
-    const url = (await pub)?.signedUrl ?? null;
+    const { data: signed } = await supabase.storage.from("course-materials").createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = signed?.signedUrl ?? null;
     const { error } = await supabase.from("lesson_materials").insert({ topic_id: topicId, title, file_path: path, file_url: url });
     if (error) return toast.error(error.message);
     setTitle(""); setFile(null); onChange();
