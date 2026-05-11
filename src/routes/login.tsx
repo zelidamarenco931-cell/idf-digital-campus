@@ -35,9 +35,8 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between bg-topbar text-topbar-foreground p-10">
-        <div className="flex items-center gap-3 text-xl font-semibold">
-          <img src={logo} alt="IDF" className="h-10 w-10 rounded-md bg-white object-contain p-1" />
-          IDF
+        <div className="flex items-center">
+          <img src={logo} alt="IDF" className="h-20 w-20 rounded-lg bg-white object-contain p-2 shadow-lg" />
         </div>
         <div>
           <h1 className="text-4xl font-bold leading-tight">Instituto Digital de Formação</h1>
@@ -50,8 +49,8 @@ function LoginPage() {
 
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2 mb-6 text-primary font-semibold">
-            <img src={logo} alt="IDF" className="h-8 w-8 object-contain" /> IDF
+          <div className="lg:hidden flex justify-center mb-6">
+            <img src={logo} alt="IDF" className="h-20 w-20 object-contain" />
           </div>
           <h2 className="text-2xl font-semibold">Iniciar sessão</h2>
           <p className="text-sm text-muted-foreground mt-1">
