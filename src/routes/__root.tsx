@@ -44,7 +44,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "IDF — Instituto Digital de Formação" },
       { name: "description", content: "Plataforma académica IDF" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
