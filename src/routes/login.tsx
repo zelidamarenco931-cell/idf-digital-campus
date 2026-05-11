@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, primaryRole } from "@/lib/auth";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ function LoginPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between bg-topbar text-topbar-foreground p-10">
         <div className="flex items-center gap-3 text-xl font-semibold">
-          <GraduationCap className="h-7 w-7" />
+          <img src={logo} alt="IDF" className="h-10 w-10 rounded-md bg-white object-contain p-1" />
           IDF
         </div>
         <div>
@@ -51,7 +51,7 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2 mb-6 text-primary font-semibold">
-            <GraduationCap className="h-6 w-6" /> IDF
+            <img src={logo} alt="IDF" className="h-8 w-8 object-contain" /> IDF
           </div>
           <h2 className="text-2xl font-semibold">Iniciar sessão</h2>
           <p className="text-sm text-muted-foreground mt-1">
