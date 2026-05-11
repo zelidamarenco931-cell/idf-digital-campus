@@ -1,7 +1,8 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Bell, MessageSquare, LogOut, LayoutDashboard, Calendar, FolderLock, BookOpen, Home, Users, GraduationCap, Settings } from "lucide-react";
+import { Bell, MessageSquare, LogOut, LayoutDashboard, Calendar, FolderLock, BookOpen, Home, Users, Settings } from "lucide-react";
 import { useAuth, primaryRole, type Role } from "@/lib/auth";
 import type { ReactNode } from "react";
+import logo from "@/assets/logo.png";
 
 function NavItem({ to, icon: Icon, children }: { to: string; icon: any; children: ReactNode }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
@@ -34,7 +35,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {/* Topbar */}
       <header className="h-14 bg-topbar text-topbar-foreground flex items-center px-4 gap-4 shadow-sm">
         <Link to="/" className="flex items-center gap-2 font-semibold">
-          <GraduationCap className="h-6 w-6" />
+          <img src={logo} alt="IDF" className="h-8 w-8 rounded-sm bg-white object-contain p-0.5" />
           <span>IDF — Instituto Digital de Formação</span>
         </Link>
         <div className="flex-1" />
