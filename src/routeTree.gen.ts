@@ -11,6 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentFilesRouteImport } from './routes/student.files'
+import { Route as StudentDashboardRouteImport } from './routes/student.dashboard'
+import { Route as StudentCalendarRouteImport } from './routes/student.calendar'
+import { Route as InstructorDashboardRouteImport } from './routes/instructor.dashboard'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
+import { Route as StudentCoursesIndexRouteImport } from './routes/student.courses.index'
+import { Route as InstructorCoursesIndexRouteImport } from './routes/instructor.courses.index'
+import { Route as StudentGradesCourseIdRouteImport } from './routes/student.grades.$courseId'
+import { Route as StudentCoursesIdRouteImport } from './routes/student.courses.$id'
+import { Route as InstructorCoursesIdRouteImport } from './routes/instructor.courses.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -22,31 +35,194 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentFilesRoute = StudentFilesRouteImport.update({
+  id: '/student/files',
+  path: '/student/files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentDashboardRoute = StudentDashboardRouteImport.update({
+  id: '/student/dashboard',
+  path: '/student/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentCalendarRoute = StudentCalendarRouteImport.update({
+  id: '/student/calendar',
+  path: '/student/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorDashboardRoute = InstructorDashboardRouteImport.update({
+  id: '/instructor/dashboard',
+  path: '/instructor/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCoursesRoute = AdminCoursesRouteImport.update({
+  id: '/admin/courses',
+  path: '/admin/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentCoursesIndexRoute = StudentCoursesIndexRouteImport.update({
+  id: '/student/courses/',
+  path: '/student/courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorCoursesIndexRoute = InstructorCoursesIndexRouteImport.update({
+  id: '/instructor/courses/',
+  path: '/instructor/courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentGradesCourseIdRoute = StudentGradesCourseIdRouteImport.update({
+  id: '/student/grades/$courseId',
+  path: '/student/grades/$courseId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentCoursesIdRoute = StudentCoursesIdRouteImport.update({
+  id: '/student/courses/$id',
+  path: '/student/courses/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorCoursesIdRoute = InstructorCoursesIdRouteImport.update({
+  id: '/instructor/courses/$id',
+  path: '/instructor/courses/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/instructor/dashboard': typeof InstructorDashboardRoute
+  '/student/calendar': typeof StudentCalendarRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/files': typeof StudentFilesRoute
+  '/instructor/courses/$id': typeof InstructorCoursesIdRoute
+  '/student/courses/$id': typeof StudentCoursesIdRoute
+  '/student/grades/$courseId': typeof StudentGradesCourseIdRoute
+  '/instructor/courses/': typeof InstructorCoursesIndexRoute
+  '/student/courses/': typeof StudentCoursesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/instructor/dashboard': typeof InstructorDashboardRoute
+  '/student/calendar': typeof StudentCalendarRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/files': typeof StudentFilesRoute
+  '/instructor/courses/$id': typeof InstructorCoursesIdRoute
+  '/student/courses/$id': typeof StudentCoursesIdRoute
+  '/student/grades/$courseId': typeof StudentGradesCourseIdRoute
+  '/instructor/courses': typeof InstructorCoursesIndexRoute
+  '/student/courses': typeof StudentCoursesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/instructor/dashboard': typeof InstructorDashboardRoute
+  '/student/calendar': typeof StudentCalendarRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/files': typeof StudentFilesRoute
+  '/instructor/courses/$id': typeof InstructorCoursesIdRoute
+  '/student/courses/$id': typeof StudentCoursesIdRoute
+  '/student/grades/$courseId': typeof StudentGradesCourseIdRoute
+  '/instructor/courses/': typeof InstructorCoursesIndexRoute
+  '/student/courses/': typeof StudentCoursesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/instructor/dashboard'
+    | '/student/calendar'
+    | '/student/dashboard'
+    | '/student/files'
+    | '/instructor/courses/$id'
+    | '/student/courses/$id'
+    | '/student/grades/$courseId'
+    | '/instructor/courses/'
+    | '/student/courses/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login'
-  id: '__root__' | '/' | '/login'
+  to:
+    | '/'
+    | '/login'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/instructor/dashboard'
+    | '/student/calendar'
+    | '/student/dashboard'
+    | '/student/files'
+    | '/instructor/courses/$id'
+    | '/student/courses/$id'
+    | '/student/grades/$courseId'
+    | '/instructor/courses'
+    | '/student/courses'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/instructor/dashboard'
+    | '/student/calendar'
+    | '/student/dashboard'
+    | '/student/files'
+    | '/instructor/courses/$id'
+    | '/student/courses/$id'
+    | '/student/grades/$courseId'
+    | '/instructor/courses/'
+    | '/student/courses/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  AdminCoursesRoute: typeof AdminCoursesRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  InstructorDashboardRoute: typeof InstructorDashboardRoute
+  StudentCalendarRoute: typeof StudentCalendarRoute
+  StudentDashboardRoute: typeof StudentDashboardRoute
+  StudentFilesRoute: typeof StudentFilesRoute
+  InstructorCoursesIdRoute: typeof InstructorCoursesIdRoute
+  StudentCoursesIdRoute: typeof StudentCoursesIdRoute
+  StudentGradesCourseIdRoute: typeof StudentGradesCourseIdRoute
+  InstructorCoursesIndexRoute: typeof InstructorCoursesIndexRoute
+  StudentCoursesIndexRoute: typeof StudentCoursesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +241,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/files': {
+      id: '/student/files'
+      path: '/student/files'
+      fullPath: '/student/files'
+      preLoaderRoute: typeof StudentFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/dashboard': {
+      id: '/student/dashboard'
+      path: '/student/dashboard'
+      fullPath: '/student/dashboard'
+      preLoaderRoute: typeof StudentDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/calendar': {
+      id: '/student/calendar'
+      path: '/student/calendar'
+      fullPath: '/student/calendar'
+      preLoaderRoute: typeof StudentCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instructor/dashboard': {
+      id: '/instructor/dashboard'
+      path: '/instructor/dashboard'
+      fullPath: '/instructor/dashboard'
+      preLoaderRoute: typeof InstructorDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/courses': {
+      id: '/admin/courses'
+      path: '/admin/courses'
+      fullPath: '/admin/courses'
+      preLoaderRoute: typeof AdminCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/courses/': {
+      id: '/student/courses/'
+      path: '/student/courses'
+      fullPath: '/student/courses/'
+      preLoaderRoute: typeof StudentCoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instructor/courses/': {
+      id: '/instructor/courses/'
+      path: '/instructor/courses'
+      fullPath: '/instructor/courses/'
+      preLoaderRoute: typeof InstructorCoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/grades/$courseId': {
+      id: '/student/grades/$courseId'
+      path: '/student/grades/$courseId'
+      fullPath: '/student/grades/$courseId'
+      preLoaderRoute: typeof StudentGradesCourseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/courses/$id': {
+      id: '/student/courses/$id'
+      path: '/student/courses/$id'
+      fullPath: '/student/courses/$id'
+      preLoaderRoute: typeof StudentCoursesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instructor/courses/$id': {
+      id: '/instructor/courses/$id'
+      path: '/instructor/courses/$id'
+      fullPath: '/instructor/courses/$id'
+      preLoaderRoute: typeof InstructorCoursesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  AdminCoursesRoute: AdminCoursesRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  InstructorDashboardRoute: InstructorDashboardRoute,
+  StudentCalendarRoute: StudentCalendarRoute,
+  StudentDashboardRoute: StudentDashboardRoute,
+  StudentFilesRoute: StudentFilesRoute,
+  InstructorCoursesIdRoute: InstructorCoursesIdRoute,
+  StudentCoursesIdRoute: StudentCoursesIdRoute,
+  StudentGradesCourseIdRoute: StudentGradesCourseIdRoute,
+  InstructorCoursesIndexRoute: InstructorCoursesIndexRoute,
+  StudentCoursesIndexRoute: StudentCoursesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
