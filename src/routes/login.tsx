@@ -1,0 +1,91 @@
+import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { GraduationCap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, primaryRole } from "@/lib/auth";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/login")({ component: LoginPage });
+
+function LoginPage() {
+  const { user, loading, roles } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!loading && user) {
+    const r = primaryRole(roles);
+    return <Navigate to={r === "admin" ? "/admin/dashboard" : r === "instructor" ? "/instructor/dashboard" : "/student/dashboard"} />;
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Credenciais inválidas. Contacta o administrador.");
+      return;
+    }
+    toast.success("Bem-vindo!");
+    navigate({ to: "/" });
+  };
+
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      <div className="hidden lg:flex flex-col justify-between bg-topbar text-topbar-foreground p-10">
+        <div className="flex items-center gap-3 text-xl font-semibold">
+          <GraduationCap className="h-7 w-7" />
+          IDF
+        </div>
+        <div>
+          <h1 className="text-4xl font-bold leading-tight">Instituto Digital de Formação</h1>
+          <p className="mt-3 opacity-90 max-w-md">
+            Plataforma académica fechada para alunos inscritos, instrutores e administradores.
+          </p>
+        </div>
+        <p className="text-sm opacity-75">© {new Date().getFullYear()} IDF</p>
+      </div>
+
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden flex items-center gap-2 mb-6 text-primary font-semibold">
+            <GraduationCap className="h-6 w-6" /> IDF
+          </div>
+          <h2 className="text-2xl font-semibold">Iniciar sessão</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Acesso restrito a contas criadas pelo administrador.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <div>
+              <label className="text-sm font-medium">Email</label>
+              <input
+                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Palavra-passe</label>
+              <input
+                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <button
+              disabled={submitting}
+              className="w-full rounded-md bg-primary text-primary-foreground py-2 text-sm font-medium hover:opacity-90 disabled:opacity-60"
+            >
+              {submitting ? "A entrar…" : "Entrar"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-xs text-muted-foreground text-center">
+            Não tens conta? Contacta o administrador da plataforma.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
