@@ -1,2 +1,2 @@
 # IDF Ensino Online
-Instituto Digital de Formação
+Instituto Digital de Formação.
