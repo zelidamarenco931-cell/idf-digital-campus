@@ -1,7 +1,9 @@
 name: Atualizar bun.lock
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [fix/tanstack-start-seguranca]
+    paths: [".github/workflows/update-lock.yml"]
 
 permissions:
   contents: write
