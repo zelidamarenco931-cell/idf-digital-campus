@@ -33,6 +33,33 @@ interface CalendarEvent {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Fuso horário da instituição (Moçambique, UTC+2, sem horário de verão).
+// Usado para saber "hoje", independentemente do fuso do dispositivo.
+const APP_TZ = "Africa/Maputo";
+
+function todayInAppTZ() {
+  // "en-CA" formata como yyyy-mm-dd
+  const iso = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const [y, m, d] = iso.split("-").map(Number);
+  return { year: y, month: m - 1, day: d };
+}
+
+// O Postgres devolve colunas "time" como HH:MM:SS; mostramos só HH:MM.
+function formatTime(t?: string | null) {
+  return t ? t.slice(0, 5) : "";
+}
+
+// Dia da semana (Seg=0 … Dom=6) de uma data yyyy-mm-dd, sem depender do fuso.
+function weekdayIndex(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+}
+
 const KIND_META: Record<EventKind, { label: string; color: string; bg: string; dot: string; Icon: typeof BookOpen }> = {
   aula:     { label: "Aula",     color: "text-blue-600",   bg: "bg-blue-50 border-blue-200",   dot: "bg-blue-500",   Icon: BookOpen },
   teste:    { label: "Teste",    color: "text-violet-600", bg: "bg-violet-50 border-violet-200", dot: "bg-violet-500", Icon: ClipboardList },
@@ -63,9 +90,9 @@ const DAY_PT = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
 export default function StudentCalendar() {
   const { user } = useAuth();
 
-  const today = new Date();
-  const [viewYear, setViewYear]   = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const today = useMemo(() => todayInAppTZ(), []);
+  const [viewYear, setViewYear]   = useState(today.year);
+  const [viewMonth, setViewMonth] = useState(today.month);
   const [events, setEvents]       = useState<CalendarEvent[]>([]);
   const [loading, setLoading]     = useState(true);
   const [selected, setSelected]   = useState<string | null>(null); // iso date
@@ -74,6 +101,7 @@ export default function StudentCalendar() {
 
   useEffect(() => {
     if (!user) return;
+    const userId = user.id;
 
     async function load() {
       setLoading(true);
@@ -82,14 +110,14 @@ export default function StudentCalendar() {
         const { data: enrollments, error: eErr } = await supabase
           .from("enrollments")
           .select("subject_id")
-          .eq("student_id", user.id);
+          .eq("student_id", userId);
 
         if (eErr) throw eErr;
         const subjectIds = (enrollments ?? []).map((e: { subject_id: string }) => e.subject_id);
-        if (subjectIds.length === 0) { setEvents([]); setLoading(false); return; }
+        if (subjectIds.length === 0) { setEvents([]); return; }
 
         // 2. Parallel fetch: aulas, testes, trabalhos
-        const [{ data: aulas }, { data: testes }, { data: trabalhos }] = await Promise.all([
+        const [aulasRes, testesRes, trabalhosRes] = await Promise.all([
           supabase
             .from("aulas")
             .select("id, title, subject_id, date, time, duration, zoom_url, location, description, subjects(name)")
@@ -104,13 +132,17 @@ export default function StudentCalendar() {
             .in("subject_id", subjectIds),
         ]);
 
+        if (aulasRes.error) throw aulasRes.error;
+        if (testesRes.error) throw testesRes.error;
+        if (trabalhosRes.error) throw trabalhosRes.error;
+
         const toEvent = (kind: EventKind) => (row: Record<string, unknown>): CalendarEvent => ({
           id:          `${kind}-${row.id}`,
           kind,
           title:       row.title as string,
           subject:     (row.subjects as { name: string } | null)?.name ?? "—",
           date:        row.date as string,
-          time:        row.time as string | undefined,
+          time:        formatTime(row.time as string | undefined) || undefined,
           duration:    row.duration as number | undefined,
           zoom_url:    row.zoom_url as string | undefined,
           location:    row.location as string | undefined,
@@ -118,9 +150,9 @@ export default function StudentCalendar() {
         });
 
         const all: CalendarEvent[] = [
-          ...(aulas     ?? []).map(toEvent("aula")),
-          ...(testes    ?? []).map(toEvent("teste")),
-          ...(trabalhos ?? []).map(toEvent("trabalho")),
+          ...(aulasRes.data     ?? []).map(toEvent("aula")),
+          ...(testesRes.data    ?? []).map(toEvent("teste")),
+          ...(trabalhosRes.data ?? []).map(toEvent("trabalho")),
         ];
 
         setEvents(all);
@@ -169,8 +201,11 @@ export default function StudentCalendar() {
   // Pad to full weeks
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const selectedEvents = selected ? (byDate[selected] ?? []) : [];
-  const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+  // Cópia antes de ordenar para não alterar o estado original
+  const selectedEvents = selected
+    ? [...(byDate[selected] ?? [])].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""))
+    : [];
+  const todayIso = isoDate(today.year, today.month, today.day);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -295,7 +330,7 @@ export default function StudentCalendar() {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">
-                      {DAY_PT[new Date(selected + "T12:00:00").getDay() === 0 ? 6 : new Date(selected + "T12:00:00").getDay() - 1]}
+                      {DAY_PT[weekdayIndex(selected)]}
                     </p>
                     <p className="text-base font-semibold text-gray-800">
                       {Number(selected.split("-")[2])} de {MONTH_PT[Number(selected.split("-")[1]) - 1]}
@@ -317,9 +352,7 @@ export default function StudentCalendar() {
                       Sem eventos neste dia.
                     </div>
                   ) : (
-                    selectedEvents
-                      .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""))
-                      .map(ev => {
+                    selectedEvents.map(ev => {
                         const meta = KIND_META[ev.kind];
                         const Icon = meta.Icon;
                         return (
