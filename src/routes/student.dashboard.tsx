@@ -14,6 +14,9 @@ export const Route = createFileRoute("/student/dashboard")({
 
 type Course = { id: string; code: string; name: string; description: string | null };
 
+// Fuso horário da instituição (Moçambique, UTC+2).
+const APP_TZ = "Africa/Maputo";
+
 function Page() {
   const { user, profile } = useAuth();
   const [courses, setCourses]         = useState<Course[]>([]);
@@ -36,29 +39,38 @@ function Page() {
       const courseIds = myCourses.map((c) => c.id);
 
       if (courseIds.length > 0) {
-        // Testes disponíveis
-        const { count: qc } = await supabase
-          .from("quizzes")
-          .select("id", { count: "exact", head: true })
-          .in("course_id", courseIds)
-          .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`);
-        setQuizCount(qc ?? 0);
-
-        // Trabalhos pendentes (não submetidos)
-        const { data: allAssign } = await supabase
-          .from("assignments")
+        // Quizzes e trabalhos ligam-se à disciplina através dos tópicos (topic_id)
+        const { data: topics } = await supabase
+          .from("course_topics")
           .select("id")
           .in("course_id", courseIds);
-        const assignIds = (allAssign ?? []).map((a: any) => a.id);
+        const topicIds = (topics ?? []).map((t: any) => t.id);
 
-        if (assignIds.length > 0) {
-          const { data: subs } = await supabase
-            .from("assignment_submissions")
-            .select("assignment_id")
-            .eq("student_id", user.id)
-            .in("assignment_id", assignIds);
-          const submittedIds = new Set((subs ?? []).map((s: any) => s.assignment_id));
-          setAssignCount(assignIds.filter((id: string) => !submittedIds.has(id)).length);
+        if (topicIds.length > 0) {
+          // Testes disponíveis
+          const { count: qc } = await supabase
+            .from("quizzes")
+            .select("id", { count: "exact", head: true })
+            .in("topic_id", topicIds)
+            .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`);
+          setQuizCount(qc ?? 0);
+
+          // Trabalhos pendentes (não submetidos)
+          const { data: allAssign } = await supabase
+            .from("assignments")
+            .select("id")
+            .in("topic_id", topicIds);
+          const assignIds = (allAssign ?? []).map((a: any) => a.id);
+
+          if (assignIds.length > 0) {
+            const { data: subs } = await supabase
+              .from("assignment_submissions")
+              .select("assignment_id")
+              .eq("student_id", user.id)
+              .in("assignment_id", assignIds);
+            const submittedIds = new Set((subs ?? []).map((s: any) => s.assignment_id));
+            setAssignCount(assignIds.filter((id: string) => !submittedIds.has(id)).length);
+          }
         }
       }
 
@@ -78,7 +90,9 @@ function Page() {
     })();
   }, [user]);
 
-  const hour = new Date().getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: APP_TZ, hour: "2-digit", hourCycle: "h23" }).format(new Date())
+  );
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   if (loading) return (
@@ -96,7 +110,7 @@ function Page() {
             {greeting}, {profile?.full_name?.split(" ")[0] || "estudante"} 👋
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {new Date().toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })}
+            {new Date().toLocaleDateString("pt-PT", { timeZone: APP_TZ, weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
         <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg font-bold">
@@ -139,15 +153,17 @@ function Page() {
               return (
                 <li key={l.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex flex-col items-center justify-center shrink-0">
-                    <span className="text-xs font-bold leading-none">{d.getDate()}</span>
+                    <span className="text-xs font-bold leading-none">
+                      {d.toLocaleString("pt-PT", { timeZone: APP_TZ, day: "numeric" })}
+                    </span>
                     <span className="text-[10px] leading-none opacity-70">
-                      {d.toLocaleString("pt-PT", { month: "short" })}
+                      {d.toLocaleString("pt-PT", { timeZone: APP_TZ, month: "short" })}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{l.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {d.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
+                      {d.toLocaleTimeString("pt-PT", { timeZone: APP_TZ, hour: "2-digit", minute: "2-digit" })}
                       {l.topic?.course?.name ? ` · ${l.topic.course.name}` : ""}
                     </p>
                   </div>
