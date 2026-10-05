@@ -17,25 +17,26 @@ function Page() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [score, setScore] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: q } = await supabase.from("quizzes").select("*").eq("id", id).maybeSingle();
-      const { data: qs } = await supabase.from("questions").select("id,text,options,position").eq("quiz_id", id).order("position");
-      setQuiz(q); setQuestions(qs ?? []);
+      // As perguntas vêm de uma função no servidor, sem a resposta correta
+      const { data: qs, error } = await (supabase as any).rpc("get_quiz_questions", { _quiz: id });
+      if (error) toast.error(error.message);
+      setQuiz(q); setQuestions((qs as any[]) ?? []);
     })();
   }, [id]);
 
   const submit = async () => {
-    if (!user) return;
-    const { data: full } = await supabase.from("questions").select("id,correct_index").eq("quiz_id", id);
-    let correct = 0;
-    (full ?? []).forEach((q: any) => { if (answers[q.id] === q.correct_index) correct++; });
-    const finalScore = full && full.length ? (correct / full.length) * 20 : 0;
-    const { error } = await supabase.from("quiz_attempts").insert({
-      quiz_id: id, student_id: user.id, answers, score: finalScore, submitted_at: new Date().toISOString(),
-    });
+    if (!user || submitting) return;
+    setSubmitting(true);
+    // A correção é feita no servidor
+    const { data, error } = await (supabase as any).rpc("submit_quiz", { _quiz: id, _answers: answers });
+    setSubmitting(false);
     if (error) return toast.error(error.message);
+    const finalScore = Number(data ?? 0);
     setScore(finalScore);
     toast.success(`Submetido! Nota: ${finalScore.toFixed(2)}/20`);
   };
@@ -66,7 +67,9 @@ function Page() {
           ))}
         </div>
       ))}
-      <button onClick={submit} className="rounded bg-primary text-primary-foreground px-6 py-2 text-sm">Submeter teste</button>
+      <button onClick={submit} disabled={submitting} className="rounded bg-primary text-primary-foreground px-6 py-2 text-sm disabled:opacity-50">
+        {submitting ? "A submeter…" : "Submeter teste"}
+      </button>
     </div>
   );
 }
