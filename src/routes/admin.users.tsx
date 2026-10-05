@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useAuth } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ type Row = { id: string; full_name: string; email: string | null; roles: string[
 type Role = "admin" | "instructor" | "student";
 
 function Page() {
+  const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -21,8 +23,11 @@ function Page() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data: profs } = await supabase.from("profiles").select("id, full_name, email").order("full_name");
-    const { data: rs } = await supabase.from("user_roles").select("user_id, role");
+    const [{ data: profs, error: pe }, { data: rs, error: re }] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, email").order("full_name"),
+      supabase.from("user_roles").select("user_id, role"),
+    ]);
+    if (pe || re) toast.error((pe ?? re)!.message);
     const map = new Map<string, string[]>();
     (rs ?? []).forEach((r: any) => {
       const a = map.get(r.user_id) ?? []; a.push(r.role); map.set(r.user_id, a);
@@ -33,6 +38,11 @@ function Page() {
   useEffect(() => { refresh(); }, []);
 
   const setRole = async (userId: string, role: Role, add: boolean) => {
+    // Evita que o administrador perca o próprio acesso por engano
+    if (!add && role === "admin" && userId === user?.id) {
+      toast.error("Não pode remover o seu próprio papel de administrador.");
+      return;
+    }
     if (add) {
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
       if (error && !error.message.includes("duplicate")) { toast.error(error.message); return; }
@@ -65,12 +75,12 @@ function Page() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Utilizadores</h1>
 
-      <form onSubmit={createUser} className="rounded-lg border bg-card p-4 space-y-3">
+      <form onSubmit={createUser} className="rounded-lg border bg-card p-4 space-y-3" autoComplete="off">
         <h2 className="font-medium">Criar novo utilizador</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <Input placeholder="Nome completo" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
           <Input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <Input type="text" placeholder="Palavra-passe (mín. 6)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          <Input type="password" autoComplete="new-password" placeholder="Palavra-passe (mín. 6)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
           <select
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             value={form.role}
