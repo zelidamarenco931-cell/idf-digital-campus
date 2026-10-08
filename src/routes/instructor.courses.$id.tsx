@@ -9,7 +9,25 @@ export const Route = createFileRoute("/instructor/courses/$id")({
   component: () => <RequireAuth allow={["instructor", "admin"]}><Page /></RequireAuth>,
 });
 
-function fmt(d?: string | null) { return d ? new Date(d).toLocaleString("pt-PT") : ""; }
+// Fuso da instituição (Moçambique, UTC+2, sem horário de verão)
+const APP_TZ = "Africa/Maputo";
+
+function fmt(d?: string | null) {
+  return d ? new Date(d).toLocaleString("pt-PT", { timeZone: APP_TZ }) : "";
+}
+
+// Converte o valor de um <input type="datetime-local"> para um instante ISO no fuso de Maputo.
+// Sem isto a hora digitada seria gravada como UTC e apareceria 2 horas adiantada aos alunos.
+function toMaputoISO(local: string): string | null {
+  if (!local) return null;
+  return local.length === 16 ? `${local}:00+02:00` : `${local}+02:00`;
+}
+
+async function del(table: string, id: string, onDone: () => void) {
+  const { error } = await (supabase as any).from(table).delete().eq("id", id);
+  if (error) return toast.error(error.message);
+  onDone();
+}
 
 function Page() {
   const { id } = Route.useParams();
@@ -39,8 +57,7 @@ function Page() {
 
   const delTopic = async (tid: string) => {
     if (!confirm("Eliminar tópico e todo o seu conteúdo?")) return;
-    await supabase.from("course_topics").delete().eq("id", tid);
-    refresh();
+    await del("course_topics", tid, refresh);
   };
 
   if (!course) return <p className="text-muted-foreground">A carregar…</p>;
@@ -125,7 +142,7 @@ function LessonsBlock({ topicId, lessons, onChange }: any) {
   const [title, setTitle] = useState(""); const [url, setUrl] = useState(""); const [start, setStart] = useState("");
   const add = async () => {
     if (!title || !start) return toast.error("Preenche título e data");
-    const { error } = await supabase.from("zoom_lessons").insert({ topic_id: topicId, title, zoom_url: url || null, starts_at: start });
+    const { error } = await supabase.from("zoom_lessons").insert({ topic_id: topicId, title, zoom_url: url || null, starts_at: toMaputoISO(start)! });
     if (error) return toast.error(error.message);
     setTitle(""); setUrl(""); setStart(""); onChange();
   };
@@ -139,7 +156,7 @@ function LessonsBlock({ topicId, lessons, onChange }: any) {
               <p className="font-medium">{l.title}</p>
               <p className="text-xs text-muted-foreground">{fmt(l.starts_at)}</p>
             </div>
-            <button onClick={async () => { await supabase.from("zoom_lessons").delete().eq("id", l.id); onChange(); }}
+            <button onClick={() => del("zoom_lessons", l.id, onChange)}
               className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
           </li>
         ))}
@@ -150,6 +167,7 @@ function LessonsBlock({ topicId, lessons, onChange }: any) {
         <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Zoom URL (opcional)" className="rounded border px-2 py-1.5 text-sm bg-background" />
         <button onClick={add} className="rounded bg-primary text-primary-foreground text-sm px-3">Agendar aula</button>
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">Hora de Maputo.</p>
     </div>
   );
 }
@@ -177,7 +195,7 @@ function MaterialsBlock({ topicId, materials, onChange }: any) {
             <a href={m.file_url} target="_blank" rel="noreferrer" className="hover:text-primary">{m.title}</a>
             <button onClick={async () => {
               if (m.file_path) await supabase.storage.from("course-materials").remove([m.file_path]);
-              await supabase.from("lesson_materials").delete().eq("id", m.id); onChange();
+              await del("lesson_materials", m.id, onChange);
             }} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
           </li>
         ))}
@@ -197,7 +215,7 @@ function QuizzesBlock({ topicId, quizzes, onChange }: any) {
   const [editing, setEditing] = useState<string | null>(null);
   const add = async () => {
     if (!title) return;
-    const { error } = await supabase.from("quizzes").insert({ topic_id: topicId, title, closes_at: closes || null });
+    const { error } = await supabase.from("quizzes").insert({ topic_id: topicId, title, closes_at: toMaputoISO(closes) });
     if (error) return toast.error(error.message);
     setTitle(""); setCloses(""); onChange();
   };
@@ -214,7 +232,7 @@ function QuizzesBlock({ topicId, quizzes, onChange }: any) {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditing(editing === q.id ? null : q.id)} className="text-xs text-primary">{editing === q.id ? "Fechar" : "Editar perguntas"}</button>
-                <button onClick={async () => { await supabase.from("quizzes").delete().eq("id", q.id); onChange(); }} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => del("quizzes", q.id, onChange)} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
             {editing === q.id && <QuestionsEditor quizId={q.id} questions={q.questions || []} onChange={onChange} />}
@@ -226,6 +244,7 @@ function QuizzesBlock({ topicId, quizzes, onChange }: any) {
         <input type="datetime-local" value={closes} onChange={(e) => setCloses(e.target.value)} className="rounded border px-2 py-1.5 text-sm bg-background" />
         <button onClick={add} className="rounded bg-primary text-primary-foreground text-sm px-3">Criar teste</button>
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">Prazo em hora de Maputo.</p>
     </div>
   );
 }
@@ -233,10 +252,13 @@ function QuizzesBlock({ topicId, quizzes, onChange }: any) {
 function QuestionsEditor({ quizId, questions, onChange }: any) {
   const [text, setText] = useState(""); const [opts, setOpts] = useState(["", "", "", ""]); const [correct, setCorrect] = useState(0);
   const add = async () => {
-    const filled = opts.filter((o) => o.trim());
-    if (!text || filled.length < 2) return toast.error("Pergunta e pelo menos 2 opções");
+    const filled = opts.map((o) => o.trim()).filter(Boolean);
+    if (!text.trim() || filled.length < 2) return toast.error("Pergunta e pelo menos 2 opções");
+    if (!opts[correct].trim()) return toast.error("A opção marcada como correta está vazia");
+    // O índice correto tem de ser calculado depois de remover as opções vazias
+    const correctIndex = opts.slice(0, correct).filter((o) => o.trim()).length;
     const { error } = await supabase.from("questions").insert({
-      quiz_id: quizId, text, options: filled, correct_index: correct, position: questions.length,
+      quiz_id: quizId, text: text.trim(), options: filled, correct_index: correctIndex, position: questions.length,
     });
     if (error) return toast.error(error.message);
     setText(""); setOpts(["", "", "", ""]); setCorrect(0); onChange();
@@ -247,7 +269,7 @@ function QuestionsEditor({ quizId, questions, onChange }: any) {
         {questions.map((q: any, i: number) => (
           <li key={q.id} className="flex justify-between border-b pb-1">
             <span>{i + 1}. {q.text} <span className="text-xs text-muted-foreground">(resposta: {(q.options as any[])[q.correct_index]})</span></span>
-            <button onClick={async () => { await supabase.from("questions").delete().eq("id", q.id); onChange(); }} className="text-destructive"><Trash2 className="h-3 w-3" /></button>
+            <button onClick={() => del("questions", q.id, onChange)} className="text-destructive"><Trash2 className="h-3 w-3" /></button>
           </li>
         ))}
       </ol>
@@ -270,7 +292,7 @@ function AssignmentsBlock({ topicId, assignments, onChange }: any) {
   const [title, setTitle] = useState(""); const [desc, setDesc] = useState(""); const [due, setDue] = useState("");
   const add = async () => {
     if (!title) return;
-    const { error } = await supabase.from("assignments").insert({ topic_id: topicId, title, description: desc || null, due_at: due || null });
+    const { error } = await supabase.from("assignments").insert({ topic_id: topicId, title, description: desc || null, due_at: toMaputoISO(due) });
     if (error) return toast.error(error.message);
     setTitle(""); setDesc(""); setDue(""); onChange();
   };
@@ -282,9 +304,9 @@ function AssignmentsBlock({ topicId, assignments, onChange }: any) {
           <li key={a.id} className="py-2 flex justify-between text-sm">
             <div>
               <p className="font-medium">{a.title}</p>
-              <p className="text-xs text-muted-foreground">Entrega até {fmt(a.due_at)}</p>
+              <p className="text-xs text-muted-foreground">{a.due_at ? `Entrega até ${fmt(a.due_at)}` : "Sem prazo"}</p>
             </div>
-            <button onClick={async () => { await supabase.from("assignments").delete().eq("id", a.id); onChange(); }} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
+            <button onClick={() => del("assignments", a.id, onChange)} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
           </li>
         ))}
       </ul>
@@ -294,6 +316,7 @@ function AssignmentsBlock({ topicId, assignments, onChange }: any) {
         <input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} className="rounded border px-2 py-1.5 text-sm bg-background" />
         <button onClick={add} className="rounded bg-primary text-primary-foreground text-sm px-3">Criar trabalho</button>
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">Prazo em hora de Maputo.</p>
     </div>
   );
 }
@@ -309,8 +332,14 @@ function GradesPanel({ courseId, students }: any) {
   useEffect(() => { refresh(); }, [courseId]);
   const add = async () => {
     if (!item || !studentId || !weight) return toast.error("Preenche todos os campos");
+    const w = Number(weight);
+    if (!(w > 0 && w <= 100)) return toast.error("O peso deve estar entre 0 e 100%");
+    if (grade !== "") {
+      const g = Number(grade);
+      if (!(g >= 0 && g <= 20)) return toast.error("A nota deve estar entre 0 e 20");
+    }
     const { error } = await supabase.from("grades").insert({
-      course_id: courseId, student_id: studentId, item, weight: Number(weight), grade: grade ? Number(grade) : null,
+      course_id: courseId, student_id: studentId, item, weight: w, grade: grade !== "" ? Number(grade) : null,
     });
     if (error) return toast.error(error.message);
     setItem(""); setWeight(""); setGrade(""); refresh();
@@ -323,11 +352,11 @@ function GradesPanel({ courseId, students }: any) {
           {students.map((s: any) => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
         </select>
         <input value={item} onChange={(e) => setItem(e.target.value)} placeholder="Item (ex: Teste 1)" className="rounded border px-2 py-1.5 text-sm bg-background" />
-        <input value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Peso %" type="number" className="rounded border px-2 py-1.5 text-sm bg-background" />
-        <input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="Nota 0–20" type="number" step="0.01" className="rounded border px-2 py-1.5 text-sm bg-background" />
+        <input value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Peso %" type="number" min="0" max="100" className="rounded border px-2 py-1.5 text-sm bg-background" />
+        <input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="Nota 0–20" type="number" step="0.01" min="0" max="20" className="rounded border px-2 py-1.5 text-sm bg-background" />
         <button onClick={add} className="rounded bg-primary text-primary-foreground text-sm px-3"><Award className="h-4 w-4 inline mr-1" />Lançar</button>
       </div>
-      <div className="rounded-lg border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-secondary/50"><tr className="text-left"><th className="px-3 py-2">Aluno</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Peso</th><th className="px-3 py-2">Nota</th><th></th></tr></thead>
           <tbody>
@@ -337,7 +366,7 @@ function GradesPanel({ courseId, students }: any) {
                 <td className="px-3 py-2">{g.item}</td>
                 <td className="px-3 py-2">{g.weight}%</td>
                 <td className="px-3 py-2">{g.grade ?? "—"}</td>
-                <td className="px-3 py-2 text-right"><button onClick={async () => { await supabase.from("grades").delete().eq("id", g.id); refresh(); }} className="text-destructive"><Trash2 className="h-4 w-4" /></button></td>
+                <td className="px-3 py-2 text-right"><button onClick={() => { if (confirm("Eliminar esta nota?")) del("grades", g.id, refresh); }} className="text-destructive"><Trash2 className="h-4 w-4" /></button></td>
               </tr>
             ))}
             {grades.length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Sem notas lançadas.</td></tr>}
@@ -364,9 +393,14 @@ function AttendancePanel({ topics, students }: any) {
   }, [lessonId]);
 
   const toggle = async (sid: string) => {
-    const next = !marks[sid];
-    setMarks({ ...marks, [sid]: next });
-    await supabase.from("attendance").upsert({ lesson_id: lessonId, student_id: sid, present: next }, { onConflict: "lesson_id,student_id" } as any);
+    const prev = !!marks[sid];
+    setMarks({ ...marks, [sid]: !prev });
+    const { error } = await supabase.from("attendance").upsert({ lesson_id: lessonId, student_id: sid, present: !prev }, { onConflict: "lesson_id,student_id" } as any);
+    if (error) {
+      // Desfaz a marcação se a gravação falhar
+      setMarks((m) => ({ ...m, [sid]: prev }));
+      toast.error(error.message);
+    }
   };
 
   return (
