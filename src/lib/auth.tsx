@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [profile, setProfile] = useState<AuthCtx["profile"]>(null);
   const [loading, setLoading] = useState(true);
+  // Utilizador cujos papéis já foram carregados (evita mostrar "carregando" em cada refresh do token)
+  const loadedFor = useRef<string | null>(null);
 
   const loadExtras = async (uid: string) => {
     const [{ data: r }, { data: p }] = await Promise.all([
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
     setRoles(((r ?? []) as { role: Role }[]).map((x) => x.role));
     setProfile(p ?? null);
+    loadedFor.current = uid;
   };
 
   useEffect(() => {
@@ -37,10 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadExtras(s.user.id), 0);
+        const uid = s.user.id;
+        // Ao iniciar sessão os papéis ainda não foram carregados: manter "loading" até chegarem,
+        // senão o redirecionamento usa papéis vazios e envia o admin para a área de estudante.
+        if (loadedFor.current !== uid) setLoading(true);
+        setTimeout(() => { loadExtras(uid).finally(() => setLoading(false)); }, 0);
       } else {
+        loadedFor.current = null;
         setRoles([]);
         setProfile(null);
+        setLoading(false);
       }
     });
     supabase.auth.getSession().then(({ data }) => {
