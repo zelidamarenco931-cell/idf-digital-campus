@@ -6,7 +6,7 @@
   "main": "src/server.ts",
   "vars": {
     "VITE_SUPABASE_URL": "https://ykiukumpnacztruvvxdk.supabase.co",
-    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_UjlXTjWDhUk5eMvkgG2l2g_EcKVXujd"
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_UjlXTjWDhUk5eMvkgG2I2g_EcKVXujd"
   },
   "observability": {
     "logs": {
