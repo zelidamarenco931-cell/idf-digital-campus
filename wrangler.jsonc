@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "idf-ensino-online",
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "vars": {
+    "VITE_SUPABASE_URL": "https://ykiukumpnacztruvvxdk.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_UjlXTjWDhUk5eMvkgG2l2g_EcKVXujd"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  }
+}
