@@ -25,7 +25,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) {
-      toast.error("Credenciais inválidas. Contacta o administrador.");
+      toast.error("Credenciais inválidas. Verifica o email e a palavra-passe, ou toca em \"Esqueci a senha\".");
       return;
     }
     toast.success("Bem-vindo!");
@@ -62,13 +62,18 @@ function LoginPage() {
               <label className="text-sm font-medium">Email</label>
               <input
                 type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Palavra-passe</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Palavra-passe</label>
+                <a href="/forgot-password" className="text-xs text-primary hover:underline">Esqueci a senha</a>
+              </div>
               <input
                 type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 className="mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
