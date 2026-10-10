@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Hero, HeroLink, StatTile, greetingNow, todayLong } from "@/components/DashboardUI";
 import {
   BookOpen, Users, CalendarClock, ClipboardCheck, ClipboardList, FileCheck2,
-  Video, CheckCircle2, Paperclip, Hourglass,
+  Video, CheckCircle2, Paperclip, Hourglass, Calendar,
 } from "lucide-react";
 
 export const Route = createFileRoute("/instructor/dashboard")({
@@ -138,29 +139,38 @@ function Page() {
   if (error) return <p className="text-destructive text-sm">Não foi possível carregar o painel: {error}</p>;
   if (!d || !v) return <p className="text-muted-foreground">A carregar…</p>;
 
+  const firstName = profile?.full_name?.split(" ")[0] || "instrutor";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Olá, {profile?.full_name || "instrutor"}</h1>
-        <p className="text-muted-foreground text-sm">
-          {isAdmin ? "Vista de administrador: todas as disciplinas." : "O resumo das suas disciplinas."}
-        </p>
-      </div>
+      <Hero
+        eyebrow={isAdmin ? "Administrador · vista de instrutor" : "Instrutor"}
+        title={`${greetingNow()}, ${firstName} 👋`}
+        subtitle={`${todayLong()} · ${isAdmin ? "Todas as disciplinas." : "O resumo das suas disciplinas."}`}
+        initial={(profile?.full_name || profile?.email || "I")[0].toUpperCase()}
+        avatarUrl={profile?.avatar_url}
+        actions={
+          <>
+            <HeroLink to="/instructor/courses" solid icon={<BookOpen className="h-4 w-4" />}>As minhas disciplinas</HeroLink>
+            <HeroLink to="/student/calendar" icon={<Calendar className="h-4 w-4" />}>Calendário</HeroLink>
+          </>
+        }
+      />
 
       {d.courses.length === 0 ? (
-        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground shadow-sm">
           Ainda não tem disciplinas atribuídas. Peça ao administrador para o atribuir a uma disciplina.
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Stat icon={<BookOpen className="h-4 w-4" />} label="Disciplinas" value={d.courses.length} />
-            <Stat icon={<Users className="h-4 w-4" />} label="Alunos" value={v.uniqueStudents} />
-            <Stat icon={<ClipboardCheck className="h-4 w-4" />} label="Por corrigir" value={v.pending.length} highlight={v.pending.length > 0} />
-            <Stat icon={<CalendarClock className="h-4 w-4" />} label="Próximas aulas" value={v.upcoming.length} />
+            <StatTile icon={<BookOpen className="h-5 w-5" />} label="Disciplinas" value={d.courses.length} tone="blue" />
+            <StatTile icon={<Users className="h-5 w-5" />} label="Alunos" value={v.uniqueStudents} tone="emerald" />
+            <StatTile icon={<ClipboardCheck className="h-5 w-5" />} label="Por corrigir" value={v.pending.length} tone="amber" highlight={v.pending.length > 0} />
+            <StatTile icon={<CalendarClock className="h-5 w-5" />} label="Próximas aulas" value={v.upcoming.length} tone="violet" />
           </div>
 
-          <section className="rounded-lg border bg-card">
+          <section className="rounded-xl border bg-card shadow-sm">
             <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
               <FileCheck2 className="h-4 w-4" /> Trabalhos por corrigir
             </header>
@@ -177,7 +187,7 @@ function Page() {
           </section>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <section className="rounded-lg border bg-card">
+            <section className="rounded-xl border bg-card shadow-sm">
               <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
                 <Video className="h-4 w-4" /> Próximas aulas
               </header>
@@ -188,14 +198,14 @@ function Page() {
                       <p className="font-medium truncate">{l.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{fmtDateTime(l.starts_at)}{l.course ? ` · ${l.course}` : ""}</p>
                     </div>
-                    {l.zoom_url && <a href={l.zoom_url} target="_blank" rel="noreferrer" className="text-xs rounded bg-primary text-primary-foreground px-3 py-1.5 shrink-0">Abrir Zoom</a>}
+                    {l.zoom_url && <a href={l.zoom_url} target="_blank" rel="noreferrer" className="text-xs rounded-lg bg-primary text-primary-foreground px-3 py-1.5 shrink-0">Abrir Zoom</a>}
                   </li>
                 ))}
                 {v.upcoming.length === 0 && <li className="px-5 py-6 text-sm text-center text-muted-foreground">Sem aulas agendadas.</li>}
               </ul>
             </section>
 
-            <section className="rounded-lg border bg-card">
+            <section className="rounded-xl border bg-card shadow-sm">
               <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
                 <Hourglass className="h-4 w-4" /> Prazos a chegar
               </header>
@@ -219,9 +229,11 @@ function Page() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {v.rows.map((c) => (
                 <Link key={c.id} to="/instructor/courses/$id" params={{ id: c.id }}
-                  className="rounded-lg border bg-card p-5 hover:border-primary transition space-y-3">
+                  className="rounded-xl border bg-card p-5 shadow-sm hover:border-primary hover:shadow-md transition space-y-3">
                   <div>
-                    <BookOpen className="h-5 w-5 text-primary mb-2" />
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
+                      <BookOpen className="h-5 w-5" />
+                    </div>
                     {c.code && <p className="text-xs text-muted-foreground">{c.code}</p>}
                     <h3 className="font-semibold">{c.name}</h3>
                   </div>
@@ -237,7 +249,7 @@ function Page() {
             </div>
           </section>
 
-          <section className="rounded-lg border bg-card">
+          <section className="rounded-xl border bg-card shadow-sm">
             <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
               <ClipboardList className="h-4 w-4" /> Resultados recentes de testes
             </header>
@@ -309,14 +321,5 @@ function PendingItem({ s, onSaved }: { s: any; onSaved: () => void }) {
           className="rounded bg-primary text-primary-foreground px-4 py-1.5 disabled:opacity-50">{saving ? "A guardar…" : "Guardar nota"}</button>
       </div>
     </li>
-  );
-}
-
-function Stat({ icon, label, value, highlight }: { icon: ReactNode; label: string; value: number; highlight?: boolean }) {
-  return (
-    <div className={`rounded-lg border bg-card p-4 ${highlight ? "border-amber-400" : ""}`}>
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5">{icon}{label}</p>
-      <p className="text-3xl font-semibold mt-1">{value}</p>
-    </div>
   );
 }

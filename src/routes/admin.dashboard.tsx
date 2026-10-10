@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useAuth } from "@/lib/auth";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Hero, HeroLink, StatTile, greetingNow, todayLong } from "@/components/DashboardUI";
 import {
   Users, BookOpen, GraduationCap, UserCog, ShieldCheck, ClipboardCheck,
   ClipboardList, AlertTriangle, CalendarClock, UserPlus, Settings, CheckCircle2,
@@ -31,6 +33,7 @@ type Data = {
 };
 
 function Page() {
+  const { profile } = useAuth();
   const [d, setD] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,35 +116,37 @@ function Page() {
   if (error) return <p className="text-destructive text-sm">Não foi possível carregar o painel: {error}</p>;
   if (!d || !v) return <p className="text-muted-foreground">A carregar…</p>;
 
+  const firstName = profile?.full_name?.split(" ")[0] || "administrador";
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Painel do administrador</h1>
-          <p className="text-sm text-muted-foreground">Visão geral da plataforma IDF Digital Campus</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/admin/users" className="inline-flex items-center gap-2 rounded bg-primary text-primary-foreground px-3 py-2 text-sm">
-            <UserPlus className="h-4 w-4" /> Novo utilizador
-          </Link>
-          <Link to="/admin/courses" className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-secondary">
-            <BookOpen className="h-4 w-4" /> Nova disciplina
-          </Link>
-        </div>
-      </div>
+      <Hero
+        eyebrow="Administrador"
+        title={`${greetingNow()}, ${firstName} 👋`}
+        subtitle={`${todayLong()} · Visão geral da plataforma IDF Digital Campus`}
+        initial={(profile?.full_name || profile?.email || "A")[0].toUpperCase()}
+        avatarUrl={profile?.avatar_url}
+        actions={
+          <>
+            <HeroLink to="/admin/users" solid icon={<UserPlus className="h-4 w-4" />}>Novo utilizador</HeroLink>
+            <HeroLink to="/admin/courses" icon={<BookOpen className="h-4 w-4" />}>Nova disciplina</HeroLink>
+            <HeroLink to="/admin/settings" icon={<Settings className="h-4 w-4" />}>Definições</HeroLink>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat icon={<Users className="h-4 w-4" />} label="Utilizadores" value={v.nUsers} />
-        <Stat icon={<GraduationCap className="h-4 w-4" />} label="Alunos" value={v.nStudents} />
-        <Stat icon={<UserCog className="h-4 w-4" />} label="Instrutores" value={v.nInstructors} />
-        <Stat icon={<ShieldCheck className="h-4 w-4" />} label="Administradores" value={v.nAdmins} />
-        <Stat icon={<BookOpen className="h-4 w-4" />} label="Disciplinas" value={d.courses.length} />
-        <Stat icon={<Users className="h-4 w-4" />} label="Inscrições" value={d.enrollments.length} />
-        <Stat icon={<ClipboardList className="h-4 w-4" />} label="Testes" value={d.quizzes} />
-        <Stat icon={<ClipboardCheck className="h-4 w-4" />} label="Por corrigir" value={v.pendingCount} highlight={v.pendingCount > 0} />
+        <StatTile icon={<Users className="h-5 w-5" />} label="Utilizadores" value={v.nUsers} tone="blue" />
+        <StatTile icon={<GraduationCap className="h-5 w-5" />} label="Alunos" value={v.nStudents} tone="emerald" />
+        <StatTile icon={<UserCog className="h-5 w-5" />} label="Instrutores" value={v.nInstructors} tone="violet" />
+        <StatTile icon={<ShieldCheck className="h-5 w-5" />} label="Administradores" value={v.nAdmins} tone="slate" />
+        <StatTile icon={<BookOpen className="h-5 w-5" />} label="Disciplinas" value={d.courses.length} tone="sky" />
+        <StatTile icon={<Users className="h-5 w-5" />} label="Inscrições" value={d.enrollments.length} tone="blue" />
+        <StatTile icon={<ClipboardList className="h-5 w-5" />} label="Testes" value={d.quizzes} tone="violet" />
+        <StatTile icon={<ClipboardCheck className="h-5 w-5" />} label="Por corrigir" value={v.pendingCount} tone="amber" highlight={v.pendingCount > 0} />
       </div>
 
-      <section className="rounded-lg border bg-card">
+      <section className="rounded-xl border bg-card shadow-sm">
         <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Requer atenção
         </header>
@@ -162,7 +167,7 @@ function Page() {
       </section>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <section className="rounded-lg border bg-card">
+        <section className="rounded-xl border bg-card shadow-sm">
           <header className="px-5 py-3 border-b flex items-center justify-between">
             <h2 className="font-semibold text-sm">Disciplinas</h2>
             <Link to="/admin/courses" className="text-xs text-primary">Gerir</Link>
@@ -189,7 +194,7 @@ function Page() {
           </div>
         </section>
 
-        <section className="rounded-lg border bg-card">
+        <section className="rounded-xl border bg-card shadow-sm">
           <header className="px-5 py-3 border-b flex items-center gap-2 font-semibold text-sm">
             <CalendarClock className="h-4 w-4" /> Próximas aulas
           </header>
@@ -206,7 +211,7 @@ function Page() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <section className="rounded-lg border bg-card">
+        <section className="rounded-xl border bg-card shadow-sm">
           <header className="px-5 py-3 border-b flex items-center justify-between">
             <h2 className="font-semibold text-sm">Utilizadores recentes</h2>
             <Link to="/admin/users" className="text-xs text-primary">Ver todos</Link>
@@ -227,7 +232,7 @@ function Page() {
           </ul>
         </section>
 
-        <section className="rounded-lg border bg-card">
+        <section className="rounded-xl border bg-card shadow-sm">
           <header className="px-5 py-3 border-b font-semibold text-sm">Últimas entregas de trabalhos</header>
           <ul className="divide-y">
             {v.recentSubs.map((s) => (
@@ -259,18 +264,9 @@ function roleLabel(r: string) {
   return r === "admin" ? "Admin" : r === "instructor" ? "Instrutor" : r === "student" ? "Aluno" : r;
 }
 
-function Stat({ icon, label, value, highlight }: { icon: ReactNode; label: string; value: number; highlight?: boolean }) {
-  return (
-    <div className={`rounded-lg border bg-card p-4 ${highlight ? "border-amber-400" : ""}`}>
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5">{icon}{label}</p>
-      <p className="text-3xl font-semibold mt-1">{value}</p>
-    </div>
-  );
-}
-
 function Shortcut({ to, icon, title, text }: { to: string; icon: ReactNode; title: string; text: string }) {
   return (
-    <Link to={to as any} className="rounded-lg border bg-card p-5 hover:border-primary">
+    <Link to={to as any} className="rounded-xl border bg-card p-5 shadow-sm hover:border-primary hover:shadow-md transition">
       {icon}
       <h3 className="font-semibold">{title}</h3>
       <p className="text-sm text-muted-foreground">{text}</p>
