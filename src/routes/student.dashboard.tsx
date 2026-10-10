@@ -3,9 +3,10 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Hero, HeroLink, StatTile, greetingNow, todayLong } from "@/components/DashboardUI";
 import {
   BookOpen, ClipboardList, FileCheck2, GraduationCap,
-  ChevronRight, Video, Calendar
+  ChevronRight, Video, Calendar, FolderLock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/student/dashboard")({
@@ -90,54 +91,36 @@ function Page() {
     })();
   }, [user]);
 
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: APP_TZ, hour: "2-digit", hourCycle: "h23" }).format(new Date())
-  );
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-
   if (loading) return (
     <div className="flex items-center justify-center h-48">
       <p className="text-muted-foreground text-sm">A carregar…</p>
     </div>
   );
 
+  const firstName = profile?.full_name?.split(" ")[0] || "estudante";
+
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Cabeçalho */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {greeting}, {profile?.full_name?.split(" ")[0] || "estudante"} 👋
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {new Date().toLocaleDateString("pt-PT", { timeZone: APP_TZ, weekday: "long", day: "numeric", month: "long" })}
-          </p>
-        </div>
-        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg font-bold">
-          {profile?.full_name?.[0]?.toUpperCase() ?? "A"}
-        </div>
-      </div>
+      <Hero
+        eyebrow="Aluno"
+        title={`${greetingNow()}, ${firstName} 👋`}
+        subtitle={todayLong()}
+        initial={profile?.full_name?.[0]?.toUpperCase() ?? "A"}
+        avatarUrl={profile?.avatar_url}
+        actions={
+          <>
+            <HeroLink to="/student/courses" solid icon={<GraduationCap className="h-4 w-4" />}>As minhas disciplinas</HeroLink>
+            <HeroLink to="/student/calendar" icon={<Calendar className="h-4 w-4" />}>Calendário</HeroLink>
+            <HeroLink to="/student/files" icon={<FolderLock className="h-4 w-4" />}>Ficheiros</HeroLink>
+          </>
+        }
+      />
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard
-          icon={<BookOpen className="h-5 w-5" />}
-          label="Disciplinas"
-          value={courses.length}
-          color="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
-        />
-        <StatCard
-          icon={<ClipboardList className="h-5 w-5" />}
-          label="Testes abertos"
-          value={quizCount}
-          color="bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
-        />
-        <StatCard
-          icon={<FileCheck2 className="h-5 w-5" />}
-          label="Trabalhos por entregar"
-          value={assignCount}
-          color="bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
-        />
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
+        <StatTile icon={<BookOpen className="h-5 w-5" />} label="Disciplinas" value={courses.length} tone="blue" />
+        <StatTile icon={<ClipboardList className="h-5 w-5" />} label="Testes abertos" value={quizCount} tone="violet" />
+        <StatTile icon={<FileCheck2 className="h-5 w-5" />} label="Trabalhos por entregar" value={assignCount} tone="amber" highlight={assignCount > 0} />
       </div>
 
       {/* Próximas aulas */}
@@ -147,16 +130,16 @@ function Page() {
             <Calendar className="h-4 w-4 text-primary" />
             Próximas aulas (7 dias)
           </h2>
-          <ul className="rounded-lg border bg-card divide-y">
+          <ul className="rounded-xl border bg-card shadow-sm divide-y">
             {upcoming.map((l) => {
               const d = new Date(l.starts_at);
               return (
                 <li key={l.id} className="px-4 py-3 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex flex-col items-center justify-center shrink-0">
-                    <span className="text-xs font-bold leading-none">
+                  <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex flex-col items-center justify-center shrink-0">
+                    <span className="text-sm font-bold leading-none">
                       {d.toLocaleString("pt-PT", { timeZone: APP_TZ, day: "numeric" })}
                     </span>
-                    <span className="text-[10px] leading-none opacity-70">
+                    <span className="text-[10px] leading-none opacity-70 mt-0.5">
                       {d.toLocaleString("pt-PT", { timeZone: APP_TZ, month: "short" })}
                     </span>
                   </div>
@@ -169,7 +152,7 @@ function Page() {
                   </div>
                   {l.zoom_url && (
                     <a href={l.zoom_url} target="_blank" rel="noreferrer"
-                      className="shrink-0 text-xs rounded bg-primary text-primary-foreground px-2.5 py-1.5 flex items-center gap-1">
+                      className="shrink-0 text-xs rounded-lg bg-primary text-primary-foreground px-3 py-1.5 flex items-center gap-1">
                       <Video className="h-3 w-3" /> Entrar
                     </a>
                   )}
@@ -193,7 +176,7 @@ function Page() {
         </div>
 
         {courses.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
+          <div className="rounded-xl border border-dashed p-8 text-center">
             <BookOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-muted-foreground text-sm">
               Ainda não estás inscrito em nenhuma disciplina.
@@ -207,10 +190,10 @@ function Page() {
                 key={c.id}
                 to="/student/courses/$id"
                 params={{ id: c.id }}
-                className="group rounded-lg border bg-card p-4 hover:border-primary hover:shadow-sm transition"
+                className="group rounded-xl border bg-card p-4 shadow-sm hover:border-primary hover:shadow-md transition"
               >
                 <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <BookOpen className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -227,22 +210,6 @@ function Page() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, color }: {
-  icon: React.ReactNode; label: string; value: number; color: string;
-}) {
-  return (
-    <div className="rounded-lg border bg-card p-4 flex items-center gap-3">
-      <div className={`h-10 w-10 rounded-md flex items-center justify-center shrink-0 ${color}`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-2xl font-bold leading-none">{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-      </div>
     </div>
   );
 }
