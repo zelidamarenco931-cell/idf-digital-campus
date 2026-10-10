@@ -1,0 +1,27 @@
+name: Gerar bun.lock
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - .github/workflows/gerar-bun-lock.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.15
+      - run: bun install
+      - run: |
+          if [ -n "$(git status --porcelain bun.lock)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add bun.lock
+            git commit -m "chore: gerar bun.lock"
+            git push
+          fi
