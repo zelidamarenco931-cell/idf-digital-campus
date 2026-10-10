@@ -10,6 +10,8 @@ import logo from "@/assets/logo.png";
 
 type CourseLink = { id: string; code: string; name: string };
 
+const ROLE_LABEL: Record<string, string> = { admin: "Administrador", instructor: "Instrutor", student: "Aluno" };
+
 function NavItem({
   to, icon: Icon, children, onNavigate,
 }: { to: string; icon: any; children: ReactNode; onNavigate?: () => void }) {
@@ -19,61 +21,74 @@ function NavItem({
     <Link
       to={to}
       onClick={onNavigate}
-      className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors border-l-2 ${
+      className={`mx-2 my-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-primary font-medium"
-          : "text-sidebar-foreground border-transparent hover:bg-sidebar-accent/50"
+          ? "bg-primary text-primary-foreground font-medium shadow-sm"
+          : "text-sidebar-foreground hover:bg-sidebar-accent/60"
       }`}
     >
-      <Icon className="h-4 w-4 text-primary shrink-0" />
+      <Icon className={`h-4 w-4 shrink-0 ${active ? "" : "text-primary"}`} />
       <span>{children}</span>
     </Link>
+  );
+}
+
+function CoursesList({
+  title, courses, base, onNavigate,
+}: { title: string; courses: CourseLink[]; base: "/student/courses" | "/instructor/courses"; onNavigate?: () => void }) {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  return (
+    <>
+      <NavItem to={base} icon={GraduationCap} onNavigate={onNavigate}>{title}</NavItem>
+      <div className="mx-2 mb-1 ml-5 border-l border-sidebar-border/70 pl-2">
+        {courses.map((c) => {
+          const active = path.startsWith(`${base}/${c.id}`);
+          return (
+            <Link
+              key={c.id}
+              to={`${base}/$id` as any}
+              params={{ id: c.id } as any}
+              onClick={onNavigate}
+              className={`flex items-start gap-2 rounded-md px-2.5 py-2 text-[13px] transition-colors ${
+                active ? "bg-sidebar-accent font-medium" : "hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="leading-snug">{c.name}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
 function SidebarNav({
   role, courses, onNavigate,
 }: { role: Role; courses: CourseLink[]; onNavigate?: () => void }) {
-  const path = useRouterState({ select: (r) => r.location.pathname });
   return (
-    <nav className="py-1">
+    <nav className="py-2">
       {role === "student" && (
         <>
           <NavItem to="/student/dashboard" icon={LayoutDashboard} onNavigate={onNavigate}>Painel do utilizador</NavItem>
           <NavItem to="/" icon={Home} onNavigate={onNavigate}>Página inicial do site</NavItem>
           <NavItem to="/student/calendar" icon={Calendar} onNavigate={onNavigate}>Calendário</NavItem>
           <NavItem to="/student/files" icon={FolderLock} onNavigate={onNavigate}>Ficheiros privados</NavItem>
-
-          <NavItem to="/student/courses" icon={GraduationCap} onNavigate={onNavigate}>Minhas disciplinas</NavItem>
-          {courses.map((c) => {
-            const active = path.startsWith(`/student/courses/${c.id}`);
-            return (
-              <Link
-                key={c.id}
-                to="/student/courses/$id"
-                params={{ id: c.id }}
-                onClick={onNavigate}
-                className={`flex items-start gap-3 pl-5 pr-4 py-3 text-sm border-t border-sidebar-border/60 transition-colors ${
-                  active ? "bg-sidebar-accent font-medium" : "hover:bg-sidebar-accent/50"
-                }`}
-              >
-                <GraduationCap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <span className="leading-snug">{c.name}</span>
-              </Link>
-            );
-          })}
+          <CoursesList title="Minhas disciplinas" courses={courses} base="/student/courses" onNavigate={onNavigate} />
         </>
       )}
       {role === "instructor" && (
         <>
           <NavItem to="/instructor/dashboard" icon={LayoutDashboard} onNavigate={onNavigate}>Painel do instrutor</NavItem>
+          <NavItem to="/" icon={Home} onNavigate={onNavigate}>Página inicial do site</NavItem>
           <NavItem to="/student/calendar" icon={Calendar} onNavigate={onNavigate}>Calendário</NavItem>
-          <NavItem to="/instructor/courses" icon={BookOpen} onNavigate={onNavigate}>As minhas disciplinas</NavItem>
+          <CoursesList title="As minhas disciplinas" courses={courses} base="/instructor/courses" onNavigate={onNavigate} />
         </>
       )}
       {role === "admin" && (
         <>
           <NavItem to="/admin/dashboard" icon={LayoutDashboard} onNavigate={onNavigate}>Painel admin</NavItem>
+          <NavItem to="/" icon={Home} onNavigate={onNavigate}>Página inicial do site</NavItem>
           <NavItem to="/admin/users" icon={Users} onNavigate={onNavigate}>Utilizadores</NavItem>
           <NavItem to="/admin/courses" icon={BookOpen} onNavigate={onNavigate}>Disciplinas</NavItem>
           <NavItem to="/student/calendar" icon={Calendar} onNavigate={onNavigate}>Calendário</NavItem>
@@ -84,24 +99,45 @@ function SidebarNav({
   );
 }
 
+function UserCard({ name, email, role, avatarUrl, initials }: {
+  name: string; email?: string | null; role: string; avatarUrl?: string | null; initials: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-4 bg-gradient-to-br from-primary to-primary/75 text-primary-foreground">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40" />
+      ) : (
+        <div className="h-11 w-11 rounded-full bg-white/20 ring-2 ring-white/40 flex items-center justify-center font-semibold">
+          {initials}
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="font-semibold truncate">{name}</p>
+        <p className="text-xs opacity-85 truncate">{ROLE_LABEL[role] ?? role}{email ? ` · ${email}` : ""}</p>
+      </div>
+    </div>
+  );
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, profile, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const role: Role = primaryRole(roles);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);       // telemóvel
+  const [sidebarOpen, setSidebarOpen] = useState(true);       // computador
   const [courses, setCourses] = useState<CourseLink[]>([]);
 
-  const initials = (profile?.full_name || profile?.email || "U")
-    .split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+  const displayName = profile?.full_name || profile?.email || "Utilizador";
+  const initials = displayName.split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase();
 
-  // Disciplinas do aluno para o menu lateral ("Minhas disciplinas")
+  // Disciplinas para o menu lateral ("Minhas disciplinas"), para aluno e instrutor
   useEffect(() => {
-    if (!user || role !== "student") { setCourses([]); return; }
+    if (!user || (role !== "student" && role !== "instructor")) { setCourses([]); return; }
     (async () => {
-      const { data } = await supabase
-        .from("enrollments")
-        .select("course:courses(id, code, name)")
-        .eq("student_id", user.id);
+      const q = role === "student"
+        ? supabase.from("enrollments").select("course:courses(id, code, name)").eq("student_id", user.id)
+        : supabase.from("instructor_courses").select("course:courses(id, code, name)").eq("instructor_id", user.id);
+      const { data } = await q;
       const list: CourseLink[] = (data ?? []).map((r: any) => r.course).filter(Boolean);
       list.sort((a, b) => a.name.localeCompare(b.name, "pt"));
       setCourses(list);
@@ -114,16 +150,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
+  const onMenuClick = () => {
+    // No telemóvel abre a gaveta; no computador mostra/esconde a barra lateral
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      setSidebarOpen((v) => !v);
+    } else {
+      setDrawerOpen(true);
+    }
+  };
+
+  const doSignOut = async () => { await signOut(); navigate({ to: "/login" }); };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Topbar */}
       <header className="h-14 bg-topbar text-topbar-foreground flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shadow-sm sticky top-0 z-30">
         <button
-          onClick={() => setDrawerOpen(true)}
-          className="p-2 hover:bg-white/10 rounded-md md:hidden"
+          onClick={onMenuClick}
+          className="p-2 hover:bg-white/10 rounded-md"
           aria-label="Abrir menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" />
         </button>
         <Link to="/" className="flex items-center gap-2 font-semibold min-w-0">
           <img src={logo} alt="IDF" className="h-8 w-8 rounded-sm bg-white object-contain p-0.5 shrink-0" />
@@ -146,36 +193,47 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="hidden sm:flex flex-col leading-tight">
-            <span className="text-sm font-medium">{profile?.full_name || profile?.email}</span>
+            <span className="text-sm font-medium">{displayName}</span>
             <span className="text-[11px] uppercase tracking-wide opacity-80">{role}</span>
           </div>
         </div>
-        <button
-          onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
-          className="p-2 hover:bg-white/10 rounded-md" aria-label="Sair"
-        >
+        <button onClick={doSignOut} className="p-2 hover:bg-white/10 rounded-md" aria-label="Sair">
           <LogOut className="h-5 w-5" />
         </button>
       </header>
 
       <div className="flex flex-1">
-        {/* Sidebar (computador) */}
-        <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border hidden md:block">
-          <SidebarNav role={role} courses={courses} />
-        </aside>
+        {/* Sidebar (computador) — os três traços mostram/escondem */}
+        {sidebarOpen && (
+          <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border hidden md:block">
+            <SidebarNav role={role} courses={courses} />
+          </aside>
+        )}
 
         {/* Menu lateral deslizante (telemóvel), como no Moodle */}
         {drawerOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-            <aside className="absolute left-0 top-0 bottom-0 w-[80%] max-w-sm bg-sidebar shadow-xl overflow-y-auto">
-              <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border">
-                <span className="font-semibold">Menu</span>
-                <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-md hover:bg-secondary" aria-label="Fechar menu">
+            <aside className="absolute left-0 top-0 bottom-0 w-[82%] max-w-sm bg-sidebar shadow-2xl overflow-y-auto flex flex-col">
+              <div className="relative">
+                <UserCard name={displayName} email={profile?.email} role={role} avatarUrl={profile?.avatar_url} initials={initials} />
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="absolute right-2 top-2 p-2 rounded-md hover:bg-white/15 text-primary-foreground"
+                  aria-label="Fechar menu"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <SidebarNav role={role} courses={courses} onNavigate={() => setDrawerOpen(false)} />
+              <div className="flex-1">
+                <SidebarNav role={role} courses={courses} onNavigate={() => setDrawerOpen(false)} />
+              </div>
+              <button
+                onClick={doSignOut}
+                className="m-3 flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm hover:bg-sidebar-accent/60"
+              >
+                <LogOut className="h-4 w-4" /> Sair
+              </button>
             </aside>
           </div>
         )}
