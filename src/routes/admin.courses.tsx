@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
+import { BulkEnroll } from "@/components/BulkEnroll";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,21 +24,23 @@ function Page() {
   };
   useEffect(() => { refresh(); }, []);
 
+  const loadSelected = async (course: any) => {
+    const [{ data: studs }, { data: instrs }, { data: en }, { data: as }] = await Promise.all([
+      supabase.from("user_roles").select("user_id, profiles!inner(id,full_name,email)").eq("role", "student"),
+      supabase.from("user_roles").select("user_id, profiles!inner(id,full_name,email)").eq("role", "instructor"),
+      supabase.from("enrollments").select("student_id").eq("course_id", course.id),
+      supabase.from("instructor_courses").select("instructor_id").eq("course_id", course.id),
+    ]);
+    setStudents((studs ?? []).map((r: any) => r.profiles));
+    setInstructors((instrs ?? []).map((r: any) => r.profiles));
+    setEnrolled(new Set((en ?? []).map((r: any) => r.student_id)));
+    setAssigned(new Set((as ?? []).map((r: any) => r.instructor_id)));
+  };
+
   useEffect(() => {
     if (!selected) return;
-    (async () => {
-      const [{ data: studs }, { data: instrs }, { data: en }, { data: as }] = await Promise.all([
-        supabase.from("user_roles").select("user_id, profiles!inner(id,full_name,email)").eq("role", "student"),
-        supabase.from("user_roles").select("user_id, profiles!inner(id,full_name,email)").eq("role", "instructor"),
-        supabase.from("enrollments").select("student_id").eq("course_id", selected.id),
-        supabase.from("instructor_courses").select("instructor_id").eq("course_id", selected.id),
-      ]);
-      setStudents((studs ?? []).map((r: any) => r.profiles));
-      setInstructors((instrs ?? []).map((r: any) => r.profiles));
-      setEnrolled(new Set((en ?? []).map((r: any) => r.student_id)));
-      setAssigned(new Set((as ?? []).map((r: any) => r.instructor_id)));
-    })();
-  }, [selected]);
+    loadSelected(selected);
+  }, [selected?.id]);
 
   const addCourse = async () => {
     if (!code || !name) return;
@@ -113,8 +116,11 @@ function Page() {
                 {instructors.length === 0 && <li className="text-sm text-muted-foreground">Nenhum instrutor registado.</li>}
               </ul>
             </section>
+
+            <BulkEnroll courseId={selected.id} courseName={selected.name} onDone={() => loadSelected(selected)} />
+
             <section className="rounded-lg border bg-card p-4">
-              <h3 className="font-semibold mb-2">Alunos</h3>
+              <h3 className="font-semibold mb-2">Alunos <span className="text-sm font-normal text-muted-foreground">({enrolled.size} inscritos)</span></h3>
               <ul className="space-y-1 max-h-96 overflow-auto">
                 {students.map((p) => (
                   <li key={p.id} className="flex items-center justify-between text-sm">
